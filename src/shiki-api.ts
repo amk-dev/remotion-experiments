@@ -73,44 +73,73 @@ export const processStep = async (creationName: string, steps: Step[]) => {
 	// };
 };
 
-processStep('exampleCreation', [
-	{
-		id: 'step1',
-		code: "console.log('Hello, world!');",
-		narration: 'This is a simple JavaScript console log statement.',
-	},
-	{
-		id: 'step2',
-		code: 'let a = 5; let b = 10; console.log(a + b);',
-		narration: 'Here we declare two variables and log their sum.',
-	},
-]).then((data) => {
-	data.forEach((step) => {
-		console.log({
-			...step,
-			subtitles: parseSRT(step.subtitles),
-		});
-	});
-});
-
-const parseSRT = (srt: string) => {
+export const parseSRT = (srt: string) => {
 	const pattern =
 		/(\d+)\n(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})\n([\s\S]*?(?=\n\n|\n*$))/g;
 	const subtitles: {
 		number: string;
 		start: string;
 		end: string;
+		text: string;
+		durationInFrames: number;
 	}[] = [];
 
 	const matchResult = srt.matchAll(pattern);
 
 	for (const match of matchResult) {
-		subtitles.push({
+		const subtitle = {
 			number: match[1],
 			start: match[2],
 			end: match[3],
+			text: match[4],
+		};
+
+		const durationInFrames = calculateDurationForSubtitle(subtitle, 30);
+
+		subtitles.push({
+			...subtitle,
+			durationInFrames,
 		});
 	}
 
 	return subtitles;
 };
+
+const calculateDurationForSubtitle = (
+	subtitle: {
+		start: string;
+		end: string;
+	},
+	fps: number
+) => {
+	console.group('calculateDurationForSubtitle');
+	console.log('Start', subtitle.start);
+	console.log('End', subtitle.end);
+
+	const startSeconds = timeToSeconds(subtitle.start);
+	const endSeconds = timeToSeconds(subtitle.end);
+
+	console.log('Start Second', startSeconds);
+	console.log('End Second', endSeconds);
+
+	const durationInSeconds = endSeconds - startSeconds;
+	const durationInFrames = Math.round(durationInSeconds * fps);
+
+	console.log('Duration in seconds', durationInSeconds);
+	console.log('Duration in frames', durationInFrames);
+
+	console.groupEnd();
+	return durationInFrames;
+};
+
+function timeToSeconds(time: string) {
+	const parts = time.split(':');
+	const hours = parseInt(parts[0], 10);
+	const minutes = parseInt(parts[1], 10);
+
+	const secondsAndMilliseconds = parts[2].split(',');
+	const seconds = parseInt(secondsAndMilliseconds[0], 10);
+	const milliseconds = parseInt(secondsAndMilliseconds[1], 10);
+
+	return hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+}
