@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+.line {
+	/* break sentence into lines */
+	white-space: pre-wrap;
+}
+
 .line:not(.line-focus) {
 	filter: blur(0.015rem);
 	opacity: 0.65;

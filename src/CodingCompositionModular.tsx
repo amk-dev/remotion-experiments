@@ -27,6 +27,16 @@ import {v4 as uuidv4} from 'uuid';
 
 export const MyCompositionSchema = z.object({
 	tailwindGradient: z.number(),
+	steps: z.array(
+		z.array(
+			z.object({
+				id: z.string(),
+				code: z.string(),
+				narration: z.string(),
+			})
+		)
+	),
+	creationName: z.string(),
 });
 
 const tailwindGradients = [
@@ -40,48 +50,6 @@ const tailwindGradients = [
 ];
 
 const previousCode = '';
-
-const steps = [
-	{
-		id: 'step-0',
-		code: '',
-		narration:
-			'So on my video on Array.concat, Manas Sasidaran asked me if the spread operator is a shorthand for the concat method. No, its not. concat is a method available specifically for Arrays, but spread operator is a javascript language feature. So in this video, lets learn about the spread operator. Spread operator can be used in many places with different semantics but the same syntax.',
-	},
-	{
-		id: 'step-1',
-		code: '// Spread Operator With Arrays',
-		narration: "First let's start with arrays.",
-	},
-	{
-		id: 'step-2',
-		code: `const names = ["john", "jane", "joe"];`,
-		narration: 'Here we create an array called names.',
-	},
-	{
-		id: 'step-3',
-		code: /* js */ `  
-		const updatedNames = ["kate", "james", ...names, "josh"]; 
-		// updatedNames: ["kate", "james", "john", "jane", "joe", "josh"]`,
-		narration:
-			"Next, I want to add the elements of the 'names' array to the 'updatedNames' array. To do this. I'm using the spread operator to spread the 'names' array into the 'updatedNames' array. This adds the elements of 'names' to 'updatedNames'.",
-	},
-	{
-		id: 'step-4',
-		code: /* js */ `// you can spread it in the beginning 
-		const moreNames = [...names, "kevin", "kyle", "kelly"]; 
-		// moreNames: ["john", "jane", "joe", "kevin", "kyle", "kelly"]`,
-		narration:
-			"We can also use the spread operator to add elements to the beginning of an array, as shown with the 'moreNames' array.",
-	},
-	{
-		id: 'step-5',
-		code: /* js */ `// or you can spread it in the end, or anywhere for that matter 
-		const evenMoreNames = ["kevin", "kyle", "kelly", ...names]; // evenMoreNames: ["kevin", "kyle", "kelly", "john", "jane", "joe"]`,
-		narration:
-			"Alternatively, we can add elements to the end or anywhere in an array using the spread operator, as seen in 'evenMoreNames'.",
-	},
-];
 
 // .map((step) => {
 // 	// Very hacky and mvp way to decide if i should add one \n or two \n\n
@@ -99,8 +67,10 @@ const steps = [
 // 	};
 // });
 
-export const MyComposition: React.FC<z.infer<typeof MyCompositionSchema>> = ({
+export const CodingPage: React.FC<z.infer<typeof MyCompositionSchema>> = ({
 	tailwindGradient,
+	steps,
+	creationName,
 }) => {
 	const [codeHTMLs, setCode] = useState<
 		{
@@ -123,6 +93,7 @@ export const MyComposition: React.FC<z.infer<typeof MyCompositionSchema>> = ({
 	useEffect(() => {
 		const processAllCode = async () => {
 			const codeHTMLs: {
+				id: string;
 				html: string;
 				// BackgroundColor: string;
 				audio_base64: string;
@@ -133,62 +104,70 @@ export const MyComposition: React.FC<z.infer<typeof MyCompositionSchema>> = ({
 					durationInFrames: number;
 				}[];
 			}[] = [];
-			const res = await processStep(
-				'spread-arrays',
-				steps.map((step) => ({
-					...step,
-				}))
-			);
+
+			const stepProcessings = steps.map(async (sceneSteps, index) => {
+				const res = await processStep(
+					`${creationName}-scene-${index}`,
+					sceneSteps.map((step) => ({
+						...step,
+					}))
+				);
+
+				let previousCode = '';
+
+				res.sort((stepA, stepB) => {
+					const numA = parseInt(stepA.id.split('-')[1], 10);
+					const numB = parseInt(stepB.id.split('-')[1], 10);
+					return numA - numB;
+				});
+
+				res.forEach((step) => {
+					const dom = new DOMParser().parseFromString(step.code, 'text/html');
+
+					const lines = dom.querySelectorAll('.line');
+
+					lines.forEach((line) => {
+						line.classList.add('line-focus');
+					});
+
+					const previousCodeStrippedOfLineFocus =
+						new DOMParser().parseFromString(previousCode, 'text/html');
+
+					previousCodeStrippedOfLineFocus
+						.querySelectorAll('.line-focus')
+						.forEach((line) => {
+							line.classList.remove('line-focus');
+						});
+
+					const spanForMargin = document.createElement('br');
+
+					codeHTMLs.push({
+						id: step.id,
+						html:
+							previousCodeStrippedOfLineFocus.body.innerHTML +
+							dom.body.innerHTML +
+							spanForMargin.outerHTML,
+						// BackgroundColor: step.backgroundColor,
+						// eslint-disable-next-line camelcase
+						audio_base64: step.audio_base64,
+						subtitles: parseSRT(step.subtitles),
+					});
+
+					// Remove the line-focus class
+					previousCode += dom.body.innerHTML + spanForMargin.outerHTML;
+				});
+			});
+
+			await Promise.all(stepProcessings);
 
 			// Temp hack. do this from the backend
-			res.sort((a, b) => {
-				const numA = parseInt(a.id.split('-')[1], 10);
-				const numB = parseInt(b.id.split('-')[1], 10);
+			codeHTMLs.sort((stepA, stepB) => {
+				const numA = parseInt(stepA.id.split('-')[1], 10);
+				const numB = parseInt(stepB.id.split('-')[1], 10);
 				return numA - numB;
 			});
 
-			const count = 0;
-
-			let previousCode = '';
-			debugger;
-
-			res.forEach((step) => {
-				debugger;
-				const dom = new DOMParser().parseFromString(step.code, 'text/html');
-
-				const lines = dom.querySelectorAll('.line');
-
-				lines.forEach((line) => {
-					line.classList.add('line-focus');
-				});
-
-				const previousCodeStrippedOfLineFocus = new DOMParser().parseFromString(
-					previousCode,
-					'text/html'
-				);
-
-				previousCodeStrippedOfLineFocus
-					.querySelectorAll('.line-focus')
-					.forEach((line) => {
-						line.classList.remove('line-focus');
-					});
-
-				const spanForMargin = document.createElement('br');
-
-				codeHTMLs.push({
-					html:
-						previousCodeStrippedOfLineFocus.body.innerHTML +
-						dom.body.innerHTML +
-						spanForMargin.outerHTML,
-					// BackgroundColor: step.backgroundColor,
-					// eslint-disable-next-line camelcase
-					audio_base64: step.audio_base64,
-					subtitles: parseSRT(step.subtitles),
-				});
-
-				// Remove the line-focus class
-				previousCode += dom.body.innerHTML + spanForMargin.outerHTML;
-			});
+			console.log('codeHTMLs', codeHTMLs);
 
 			setCode(codeHTMLs);
 			continueRender(handle);
@@ -201,9 +180,6 @@ export const MyComposition: React.FC<z.infer<typeof MyCompositionSchema>> = ({
 		extrapolateLeft: 'clamp',
 		extrapolateRight: 'clamp',
 	});
-
-	console.log('processing currentFrame', currentFrame);
-	console.log(steps);
 
 	return (
 		<AbsoluteFill id="total-thing">
@@ -235,7 +211,6 @@ export const MyComposition: React.FC<z.infer<typeof MyCompositionSchema>> = ({
 				</TransitionSeries.Sequence>
 
 				{codeHTMLs.map((codeHTML, index) => {
-					debugger;
 					// Find the total duration from subtitles
 
 					const totalDuration = codeHTML.subtitles.reduce((total, subtitle) => {
@@ -302,9 +277,9 @@ export const MyComposition: React.FC<z.infer<typeof MyCompositionSchema>> = ({
 													key={index}
 													name="subtitle"
 													className={
-														currentFrame > 1537
-															? `flex flex-col p-12 pt-24`
-															: `flex flex-col-reverse p-12 pb-24`
+														// CurrentFrame > 1537
+														// ? `flex flex-col p-12 pt-24`
+														`flex flex-col-reverse p-12 pb-24`
 													}
 													durationInFrames={subtitle.durationInFrames}
 												>
@@ -327,35 +302,6 @@ export const MyComposition: React.FC<z.infer<typeof MyCompositionSchema>> = ({
 					);
 				})}
 			</TransitionSeries>
-
-			{/* add the audios */}
-			{/* {codeHTMLs.map((codeHTML, index) => {
-				// Convert the audio base64 to a format that can be used with html audio src
-				const audioSource = `data:audio/mp3;base64,${codeHTML.audio_base64}`;
-
-				// Extract this to a function, because we need it in two places
-				const totalDuration = codeHTML.subtitles.reduce((total, subtitle) => {
-					total += subtitle.durationInFrames;
-					return total;
-				}, 0);
-
-				return (
-					<Sequence key={index} from={totalDuration}>
-						<Audio src={audioSource} />
-					</Sequence>
-				);
-			})} */}
-
-			{/* <Sequence
-				className="justify-center items-center"
-				from={120}
-				durationInFrames={60}
-				style={{opacity: imgOpacity2}}
-			>
-				<Img className="h-2/4" src={staticFile('organized-table.png')} />
-			</Sequence> */}
-
-			{/* <Audio src={staticFile('console-table.wav')} /> */}
 		</AbsoluteFill>
 	);
 };

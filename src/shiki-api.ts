@@ -94,7 +94,7 @@ export const parseSRT = (srt: string) => {
 			text: match[4],
 		};
 
-		const durationInFrames = calculateDurationForSubtitle(subtitle, 30);
+		const durationInFrames = calculateDurationForSubtitle(subtitle, 60);
 
 		subtitles.push({
 			...subtitle,
@@ -112,23 +112,12 @@ const calculateDurationForSubtitle = (
 	},
 	fps: number
 ) => {
-	console.group('calculateDurationForSubtitle');
-	console.log('Start', subtitle.start);
-	console.log('End', subtitle.end);
-
 	const startSeconds = timeToSeconds(subtitle.start);
 	const endSeconds = timeToSeconds(subtitle.end);
-
-	console.log('Start Second', startSeconds);
-	console.log('End Second', endSeconds);
 
 	const durationInSeconds = endSeconds - startSeconds;
 	const durationInFrames = Math.round(durationInSeconds * fps);
 
-	console.log('Duration in seconds', durationInSeconds);
-	console.log('Duration in frames', durationInFrames);
-
-	console.groupEnd();
 	return durationInFrames;
 };
 
