@@ -14,7 +14,7 @@ export const RemotionRoot: React.FC = () => {
 				defaultProps={{
 					tailwindGradient: 1,
 				}}
-				durationInFrames={6339}
+				durationInFrames={6054}
 				fps={60}
 				width={1080}
 				height={1920}
