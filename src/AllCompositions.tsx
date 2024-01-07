@@ -11,7 +11,7 @@ const sceneWithIDs = (scene: {code: string; narration: string}[]) => {
 	}));
 };
 
-import data from './array-join.remotion.json';
+import data from './nullish.remotion.json';
 
 // Create a zod schema for tailwind gradient
 export const AllCompositionsSchema = z.object({

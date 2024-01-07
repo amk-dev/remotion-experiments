@@ -229,7 +229,7 @@ export const CodingPage: React.FC<
 		processAllCode();
 	}, []);
 
-	const translateY = interpolate(currentFrame, [1604, 1664], [0, -800], {
+	const translateY = interpolate(currentFrame, [5037, 5097], [0, -800], {
 		extrapolateLeft: 'clamp',
 		extrapolateRight: 'clamp',
 		easing: Easing.elastic(),
@@ -330,9 +330,9 @@ export const CodingPage: React.FC<
 													__html: codeHTML.html,
 												}}
 												className="flex-grow code-container text-[2.5rem] px-12"
-												// Style={{
-												// 	transform: `translateY(${translateY}px)`,
-												// }}
+												style={{
+													transform: `translateY(${translateY}px)`,
+												}}
 											/>
 										)}
 									</div>
@@ -359,13 +359,14 @@ export const CodingPage: React.FC<
 													key={index}
 													name="subtitle"
 													className={
-														// CurrentFrame > 730
+														// CurrentFrame > 4449
 														// 	? `flex flex-col p-12 pt-24`
-														`flex flex-col-reverse p-12 pb-24`
+														// `flex flex-col-reverse p-12 pb-24`
+														`flex flex-col-reverse pb-52`
 													}
 													durationInFrames={subtitle.durationInFrames}
 												>
-													<p className="text-6xl font-black  leading-snug text-gray-300  p-12 rounded-3xl text-center subtitle">
+													<p className="text-6xl font-black  leading-snug text-stone-700  p-12 rounded-3xl text-center subtitle">
 														{subtitle.text}
 													</p>
 												</TransitionSeries.Sequence>
